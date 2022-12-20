@@ -14,20 +14,27 @@ public class ProductRepository
         this.logger = logger;
 
     }
-    public List<Product> GetProducts(string productName, DateTime? launchDate)
+    public virtual List<Product> GetProducts(string productName, DateTime? launchDate)
     {
         var query = dbContext.Products
         .Where(p => !p.IsDeleted)
-        .Include(p => p.ProductPrices.Where(pp => !pp.IsDeleted))
+        .Include(p => p.ProductPrices)
+        // .Include(p => p.ProductPrices.Where(pp => !pp.IsDeleted))
         .AsQueryable();
 
         query = GetFilteredQuery(query, productName, launchDate);
 
         var products = query.ToList();
 
+        // Client side filtering, as server side include-filtering is failing with SQLite
+        foreach(var product in products)
+        {
+            product.ProductPrices = product.ProductPrices.Where(pp => !pp.IsDeleted).ToList();
+        }
+
         return products;
     }
-    public void PutProducts(List<Product> sourceProducts)
+    public virtual void PutProducts(List<Product> sourceProducts)
     {
         var sourceProductPrices = sourceProducts.SelectMany(p => p.ProductPrices).ToList();
 
@@ -37,7 +44,7 @@ public class ProductRepository
             // Avoid automatic cascade save
             source.ProductPrices = null;
 
-            var target = dbContext.Products.FirstOrDefault(p => p.ProductName.ToLower() == source.ProductName.ToLower());
+            var target = dbContext.Products.FirstOrDefault(p => p.ProductName == source.ProductName);
 
             if (target is null)
             {
@@ -56,10 +63,11 @@ public class ProductRepository
         // Upsert Product Prices
         foreach(var source in sourceProductPrices)
         {
+            // Avoid automatic cascade save
             source.Product = null;
 
             var target = dbContext.ProductPrices
-            .FirstOrDefault(pp => pp.ProductName.ToLower() == source.ProductName.ToLower() && pp.Variant.ToLower() == source.Variant.ToLower());
+            .FirstOrDefault(pp => pp.ProductName == source.ProductName && pp.Variant == source.Variant);
 
             if (target is null)
             {

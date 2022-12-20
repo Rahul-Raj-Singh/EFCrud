@@ -16,7 +16,8 @@ var builder = WebApplication.CreateBuilder(args);
     builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
-    builder.Services.AddDbContext<AppDbContext>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("MyConnection")));
+    // builder.Services.AddDbContext<AppDbContext>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("MyConnection")));
+    builder.Services.AddScoped<AppDbContext>();
     builder.Services.AddScoped<ProductRepository>();
 }
 

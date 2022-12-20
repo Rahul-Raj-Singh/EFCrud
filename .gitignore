@@ -4,3 +4,5 @@ obj/
 appsettings.json
 appsettings.development.json
 launchsettings.json
+coveragereport/
+TestResults/
